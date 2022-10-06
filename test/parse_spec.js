@@ -164,4 +164,52 @@ describe('parse', function(){
         expect(fn({aKey:{}})).toBeUndefined();
         expect(fn({})).toBeUndefined();
     });
+    
+    it('uses locals instead of scope when there is a matching key', function(){
+        var fn = parse('aKey');
+        var scope = {aKey: 42};
+        var locals = {aKey: 43};
+
+        expect(fn(scope,locals)).toBe(43);
+    });
+
+    it('do not use locals instead of scope when no a matching key', function(){
+        var fn = parse('aKey');
+        var scope = {aKey: 42};
+        var locals = {otherKey: 43};
+
+        expect(fn(scope,locals)).toBe(42);
+    });
+
+    it('se locals instead of scope when first part of the key matches', function(){
+        var fn = parse('aKey.anotherKey');
+        var scope = {aKey: {anotherKey: 42}};
+        var locals = {aKey: {}};
+
+        expect(fn(scope,locals)).toBeUndefined();
+    });
+
+    it('will parse $locals', function(){
+        var fn = parse('$locals');
+        var scope = {};
+        var locals = {};
+
+        expect(fn(scope, locals)).toBe(locals);
+
+        fn = parse('$locals.aKey');
+        scope = {aKey: 42};
+        locals = {aKey: 43};
+        expect(fn(scope, locals)).toBe(43);
+    });
+
+    it('parse computed access with another key as property', function(){
+        var fn = parse('lock[key]');
+        expect(fn({key: 'theKey', lock: {theKey: 42}})).toBe(42);
+    });
+
+    it('parse computed access with another access as property', function(){
+        var fn = parse('lock[keys["aKey"]]');
+
+        expect(fn({keys:{aKey: 'theKey'}, lock: {theKey: 42}})).toBe(42);
+    });
 });
